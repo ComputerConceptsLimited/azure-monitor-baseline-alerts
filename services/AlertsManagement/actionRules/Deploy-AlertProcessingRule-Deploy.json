@@ -11,9 +11,7 @@
       "version": "1.0.2",
       "category": "Monitoring",
       "source": "https://github.com/Azure/azure-monitor-baseline-alerts/",
-      "alzCloudEnvironments": [
-        "AzureCloud"
-      ],
+      "alzCloudEnvironments": ["AzureCloud"],
       "_deployed_by_amba": "True"
     },
     "parameters": {
@@ -32,7 +30,7 @@
           "description": "Tags on the Resource group the alert is placed in"
         },
         "defaultValue": {
-            "_deployed_by_amba": true
+          "_deployed_by_amba": true
         }
       },
       "ALZMonitorResourceGroupLocation": {
@@ -58,6 +56,22 @@
           "description": "Tag name to disable monitoring at subscription. Set to true if monitoring process rule should be disabled"
         },
         "defaultValue": "MonitorDisable"
+      },
+      "ALZMonitorActionGroupLogicAppCallbackUrl": {
+        "type": "String",
+        "metadata": {
+          "displayName": "Logic App Callback URL",
+          "description": "URL of the Logic App callback"
+        },
+        "defaultValue": ""
+      },
+      "ALZMonitorActionGroupLogicAppResourceId": {
+        "type": "String",
+        "metadata": {
+          "displayName": "Logic App Resource ID",
+          "description": "Resource ID of the Logic App"
+        },
+        "defaultValue": ""
       }
     },
     "policyRule": {
@@ -113,7 +127,7 @@
                   }
                 },
                 "variables": {
-                    "varALZMonitorActionGroupEmail": "[[array(split(parameters('ALZMonitorActionGroupEmail'),','))]"
+                  "varALZMonitorActionGroupEmail": "[[array(split(parameters('ALZMonitorActionGroupEmail'),','))]"
                 },
                 "resources": [
                   {
@@ -146,58 +160,62 @@
                         },
                         "variables": {},
                         "resources": [
-                            {
-                                "type": "Microsoft.Insights/actionGroups",
-                                "apiVersion": "2022-06-01",
-                                "name": "AmbaActionGr",
-                                "location": "Global",
-                                "tags": {
-                                    "_deployed_by_amba": true
-                                  },
-                                "properties": {
-                                    "groupShortName": "AmbaActionGr",
-                                    "enabled": true,
-                                    "copy": [
-                                        {
-                                            "name": "emailReceivers",
-                                            "count": "[[length(variables('varALZMonitorActionGroupEmail'))]",
-                                            "mode": "serial",
-                                            "input": {
-                                                "name": "[[concat('AlzMail-', indexOf(variables('varALZMonitorActionGroupEmail'), variables('varALZMonitorActionGroupEmail')[copyIndex('emailReceivers')]))]",
-                                                "emailAddress": "[[trim(variables('varALZMonitorActionGroupEmail')[copyIndex('emailReceivers')])]",
-                                                "useCommonSchema": true
-                                            }
-                                        }
-                                    ]
-                                }
+                          {
+                            "type": "Microsoft.Insights/actionGroups",
+                            "apiVersion": "2022-06-01",
+                            "name": "AmbaActionGr",
+                            "location": "Global",
+                            "tags": {
+                              "_deployed_by_amba": true
                             },
-                            {
-                                "type": "Microsoft.AlertsManagement/actionRules",
-                                "apiVersion": "2021-08-08",
-                                "name": "AMBA Alert Processing Rule",
-                                "location": "Global",
-                                "dependsOn": [
-                                    "[[concat('Microsoft.Insights/actionGroups/', 'AmbaActionGr')]"
-                                ],
-                                "tags": {
-                                    "_deployed_by_amba": true
-                                },
-                                "properties": {
-                                    "scopes": [
-                                        "[[subscription().Id]"
-                                    ],
-                                    "description": "AMBA Alert Processing Rule for Subscription",
-                                    "enabled": true,
-                                    "actions": [
-                                        {
-                                        "actiongroupIds": [
-                                            "[[[concat(subscription().Id, '/resourceGroups/', parameters('ALZMonitorResourceGroupName'), '/providers/Microsoft.Insights/actionGroups/AmbaActionGr')]"
-                                        ],
-                                        "actionType": "AddActionGroups"
-                                        }
-                                    ]
+                            "properties": {
+                              "groupShortName": "AmbaActionGr",
+                              "enabled": true,
+                              "copy": [
+                                {
+                                  "name": "emailReceivers",
+                                  "count": "[[length(variables('varALZMonitorActionGroupEmail'))]",
+                                  "mode": "serial",
+                                  "input": {
+                                    "name": "[[concat('AlzMail-', indexOf(variables('varALZMonitorActionGroupEmail'), variables('varALZMonitorActionGroupEmail')[copyIndex('emailReceivers')]))]",
+                                    "emailAddress": "[[trim(variables('varALZMonitorActionGroupEmail')[copyIndex('emailReceivers')])]",
+                                    "useCommonSchema": true
+                                  }
                                 }
+                              ],
+                              "logicAppReceivers": {
+                                "callbackUrl": "[[parameters('ALZMonitorActionGroupLogicAppCallbackUrl')]",
+                                "name": "[[split(parameters('ALZMonitorActionGroupEmail'), '/')[4]]",
+                                "logicAppResourceId": "[[parameters('ALZMonitorActionGroupLogicAppResourceId')]",
+                                "useCommonAlertSchema": true
+                              }
                             }
+                          },
+                          {
+                            "type": "Microsoft.AlertsManagement/actionRules",
+                            "apiVersion": "2021-08-08",
+                            "name": "AMBA Alert Processing Rule",
+                            "location": "Global",
+                            "dependsOn": [
+                              "[[concat('Microsoft.Insights/actionGroups/', 'AmbaActionGr')]"
+                            ],
+                            "tags": {
+                              "_deployed_by_amba": true
+                            },
+                            "properties": {
+                              "scopes": ["[[subscription().Id]"],
+                              "description": "AMBA Alert Processing Rule for Subscription",
+                              "enabled": true,
+                              "actions": [
+                                {
+                                  "actiongroupIds": [
+                                    "[[[concat(subscription().Id, '/resourceGroups/', parameters('ALZMonitorResourceGroupName'), '/providers/Microsoft.Insights/actionGroups/AmbaActionGr')]"
+                                  ],
+                                  "actionType": "AddActionGroups"
+                                }
+                              ]
+                            }
+                          }
                         ]
                       },
                       "parameters": {
@@ -224,6 +242,12 @@
                 },
                 "ALZMonitorActionGroupEmail": {
                   "value": "[[parameters('ALZMonitorActionGroupEmail')]"
+                },
+                "ALZMonitorActionGroupLogicAppCallbackUrl": {
+                  "value": "[[parameters('ALZMonitorActionGroupLogicAppCallbackUrl')]"
+                },
+                "ALZMonitorActionGroupLogicAppResourceId": {
+                  "value": "[[parameters('ALZMonitorActionGroupLogicAppResourceId')]"
                 }
               }
             }

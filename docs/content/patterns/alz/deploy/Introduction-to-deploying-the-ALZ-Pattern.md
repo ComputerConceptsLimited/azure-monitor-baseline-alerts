@@ -167,6 +167,7 @@ To modify settings that are not parameterized, follow the steps below:
 3. Run the following command to update the above mentioned ***policies.bicep*** file:
 
     `bicep build .\patterns\alz\templates\policies.bicep --outfile .\patterns\alz\policyDefinitions\policies.json`
+    `bicep build ./patterns/alz/templates/policies.bicep --outfile ./patterns/alz/policyDefinitions/policies.json`
 
 4. Commit and sync the changes to your fork.
 5. Deploy you local modified copy using the below command:
